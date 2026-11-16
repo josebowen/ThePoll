@@ -1,4 +1,5 @@
 // The Poll. One mission: poll a stadium, shrink the margin with sample size, then watch two big polls miss.
+import { EF } from './effort.js';
 import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
@@ -226,7 +227,7 @@ function render(keep = true) {
     <li class="${pts[1] ? 'ok' : 'no'}"><span class="mark">${pts[1] ? '✓' : '·'}</span><div>Interpret a poll with its margin<small>${st.q2poll ? `Poll ${st.q2poll.id}: ${pc(st.q2poll.p)}% ± ${pc(st.q2poll.moe)}.` : ''}</small></div></li>
     <li class="${pts.slice(2).every(Boolean) ? 'ok' : 'no'}"><span class="mark">${pts.slice(2).every(Boolean) ? '✓' : '·'}</span><div>Tell sampling error from bias<small>${cl ? `Your club list poll said ${pc(cl.mean)}% ± ${pc(cl.moe)}. ` : ''}${ml ? `Your mail-in poll said ${pc(ml.mean)}% ± ${pc(ml.moe)}. ` : ''}The vote was 53.0%. ${pts.slice(2).filter(Boolean).length} of ${pts.length - 2} questions right on the first try.</small></div></li></ul>
     <h3>Your answers, in the order you gave them</h3><ul class="try">${trail().map((t) => `<li>${t}</li>`).join('')}</ul>
-    <p class="hint">First answers are kept even when a second try was right. A first answer is where a common idea shows.</p>
+    <p class="hint">First answers are kept even when a second try was right. A first answer is where a common idea shows.</p>${EF.html()}
     <h3>Where this shows up</h3><div class="cards">${FIELDS.map((f) => `<div class="cardf"><h4>${f.h}</h4><p>${f.p}${f.k ? ` <span class="src">${cite(f.k)}${f.k2 ? ' · ' + cite(f.k2) : ''}</span>` : ''}</p></div>`).join('')}</div>
     <h3>Take it further</h3><p>A news story reports an online survey with 20,000 responses, shared through social media. What does that number tell you about the margin of error? What does it not tell you?</p>
     <div class="row"><button class="btn" data-act="again">Play again</button><button class="btn" data-act="about">Sources and method</button></div>`;
@@ -240,6 +241,7 @@ function go(step) {
   cam.pitchT = wide ? 0.5 : 0.66; if (!cam.spin) cam.yawT = step === 'vote' ? 0.75 : 0.42;
   render(false); focusH();
 }
+EF.watch(() => { if (!document.querySelector('#panel fieldset.q input:not(:disabled), #panelBody fieldset.q input:not(:disabled)')) return null; return { brief: 'Opening guess', sample: 'Four times the sample', size: 'Reading a poll with its margin', list: 'The club list', vote: 'Error case ' + (st.cls.i + 1) }[st.step] || null; });
 function trail() {
   const QN = { q1: ['Four times the sample', Q1], q2: ['Reading a poll with its margin', Q2], q3: ['The club list of 6,400', Q3] }, out = [];
   if (st.guess !== null) out.push(`Opening guess, before any poll: ${GUESS[st.guess].toLowerCase()}.`);
@@ -258,7 +260,7 @@ function act(a) {
   if (a === 'begin') go('brief');
   else if (a === 'about') { $('#aboutBody').innerHTML = ABOUT; $('#modal').hidden = false; $('#modalClose').focus(); }
   else if (a === 'closeAbout') $('#modal').hidden = true;
-  else if (a.startsWith('p:')) { const r = poll(a.slice(2), { sweep: true }); log('poll', { k: r.k, p: r.p, n: r.n }); render(); }
+  else if (a.startsWith('p:')) { const r = poll(a.slice(2), { sweep: true }); log('poll', { k: r.k, p: r.p, n: r.n }); if (st.polls.filter((q) => q.k === r.k).length > 10) EF.extra('Extra polls'); render(); }
   else if (a.startsWith('b:')) { for (let i = 0; i < 20; i++) st.queue.push(a.slice(2)); log('batch', { k: a.slice(2) }); render(); }
   else if (a === 'count') { st.revealed = true; st.revealT = clock; const A = aState.array, T = aT.array; for (let i = 0; i < N; i++) { A[i] = S.pref[i] ? 1 : 2; T[i] = clock + ((S.pos[i * 3] + S.rim.x) / (2 * S.rim.x)) * 3.2; } aState.needsUpdate = aT.needsUpdate = true; seatMat.uniforms.uLit.value = 0.62; seatMat.uniforms.uPop.value = 0.45; truth.visible = true; cam.spin = true; log('count'); render(); st.pending = true; }
   else if (a === 'again') location.href = location.pathname + location.search;

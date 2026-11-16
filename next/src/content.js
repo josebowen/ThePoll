@@ -51,4 +51,5 @@ export const ABOUT = `
 <h3>Sources</h3>
 <ul>${Object.keys(SRC).map((k) => `<li>${cite(k)}</li>`).join('')}</ul>
 <p>Polling concepts were checked against American Government 3e by Glen Krutz and Sylvie Waskiewicz, OpenStax, and Introductory Statistics by Barbara Illowsky and Susan Dean, OpenStax, both licensed CC BY 4.0. Access for free at <a href="https://openstax.org/books/american-government-3e/pages/1-introduction" target="_blank" rel="noopener">openstax.org/books/american-government-3e</a> and <a href="https://openstax.org/books/introductory-statistics/pages/1-introduction" target="_blank" rel="noopener">openstax.org/books/introductory-statistics</a>. No OpenStax text or figures are reproduced.</p>
+<p>The debrief shows your answers in the order you gave them, with a very rough report of time spent on open decisions and optional work. It is not scored.</p>
 <p>Built with Claude as a workshop demo for faculty. No tracking. No data leaves this page.</p>`;
