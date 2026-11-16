@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Poll</title>
+<meta name="description" content="Poll a stadium of 50,000 before a vote. Watch sample size shrink the margin of error, then watch two huge polls miss, as the Literary Digest did in 1936.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>/*CSS*/</style>
+</head>
+<body data-state="title">
+<canvas id="gl" role="img" tabindex="0" aria-label="Live 3D view of a stadium of 50,000 seats at night. Polled seats light up gold for Yes and teal for No. Drag or use arrow keys to look around."></canvas>
+<div id="labels" aria-hidden="true"></div>
+
+<main id="title">
+  <div class="in">
+    <p class="kick">Statistics · political science · research methods</p>
+    <h1>The <em>Poll</em></h1>
+    <p class="sub">50,000 people vote tomorrow. Tonight you can ask a few of them. Find out how few is enough, and why a poll of thousands can still be wrong.</p>
+    <div class="row"><button class="btn pri big" data-act="begin">Start</button><button class="btn" data-act="about">About this demo</button></div>
+    <p class="foot">About 8 minutes · Every poll is a real random draw · Checked against OpenStax American Government 3e and Introductory Statistics · Best on a large screen</p>
+  </div>
+</main>
+
+<header id="top">
+  <span class="brand">The Poll</span>
+  <ol id="steps" aria-label="Progress"><li>Brief</li><li>Poll</li><li>Size</li><li>Lists</li><li>Vote</li><li>1936</li></ol>
+  <span class="sp"></span>
+  <div class="tools"><button class="btn sm" data-act="about">About</button></div>
+</header>
+<section id="hud" aria-live="off"><div id="read"></div><canvas id="chart" width="860" height="420"></canvas><div id="legend"></div></section>
+
+<aside id="panel" aria-label="Step panel"><div id="panelBody" aria-live="polite"></div></aside>
+
+<div id="modal" role="dialog" aria-modal="true" aria-labelledby="aboutH" hidden>
+  <div class="card"><button class="btn sm" id="modalClose" data-act="closeAbout">Close</button><div id="aboutBody"></div></div>
+</div>
+<script>/*JS*/</script>
+</body>
+</html>
