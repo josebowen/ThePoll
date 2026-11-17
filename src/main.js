@@ -1,4 +1,5 @@
 // The Poll. One mission: poll a stadium, shrink the margin with sample size, then watch two big polls miss.
+import { EF } from './effort.js';
 import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
@@ -23,7 +24,7 @@ const fresh = () => ({ sel: null, tries: 0, first: null, done: false });
 const st = { step: 'title', polls: [], count: {}, guess: null, q1: fresh(), q2: fresh(), q2poll: null, q3: fresh(), cls: { i: 0, sel: null, tries: 0, done: false, first: [] }, revealed: false, revealT: 0, queue: [], qT: 0, log: [] };
 LANES.forEach((l) => (st.count[l.k] = 0));
 const cam = { yaw: 0.5, pitch: 0.6, yawT: 0.5, pitchT: 0.6, w: 200, h: 95, wT: 200, hT: 95, zoom: 1, spin: true };
-const log = (what, extra = {}) => st.log.push({ step: st.step, what, ...extra });
+const log = (what, extra = {}) => { if (extra.ok === false) EF.wrong(); if (extra.ok === true) EF.resolved(); if (extra.ok !== undefined && what !== 'build') EF.mark({ ok: extra.ok }); return st.log.push({ step: st.step, what, ...extra }); };
 
 // ---------- renderer and scene ----------
 const canvas = $('#gl');
@@ -183,9 +184,8 @@ function render(keep = true) {
     }
   } else if (s === 'size') {
     h = `<p class="kick">Step 3 of 6</p><h2 tabindex="-1">Buy precision</h2><p>Run polls of 400 and of 1,600 and watch the new piles on the field. Each one gets its own lane.</p>
-    <div class="row"><button class="btn pri" data-act="p:r400" ${dis}>Poll 400</button><button class="btn" data-act="b:r400" ${dis}>Run 20</button></div><div class="row"><button class="btn pri" data-act="p:r1600" ${dis}>Poll 1,600</button><button class="btn" data-act="b:r1600" ${dis}>Run 20</button></div>${tbl(['r100', 'r400', 'r1600'])}`;
-    if (c.r400 < 10 || c.r1600 < 10) h += `<p class="hint">Run at least 10 of each size to continue.</p>`;
-    else {
+    <div class="row"><button class="btn pri" data-act="p:r400" ${dis}>Poll 400</button><button class="btn" data-act="b:r400" ${dis}>Run 20</button></div><div class="row"><button class="btn pri" data-act="p:r1600" ${dis}>Poll 1,600</button><button class="btn" data-act="b:r1600" ${dis}>Run 20</button></div>${c.r400 < 10 || c.r1600 < 10 ? `<p class="hint">Run at least 10 of each size to continue. Run 20 does a whole size in one click. So far: ${c.r400} polls of 400 and ${c.r1600} polls of 1,600.</p>` : `<p class="hint">You have enough polls. Answer the question below.</p>`}${tbl(['r100', 'r400', 'r1600'])}`;
+    if (c.r400 >= 10 && c.r1600 >= 10) {
       if (!st.q2poll) { const a = lane('r400'); st.q2poll = a.find((p) => p.p > 0.5 && p.lo < 0.5) || a[a.length - 1]; }
       const p = st.q2poll;
       h += `<p>The population is 50,000 either way. The margin depends on how many you ask, not on what share of the stadium that is.</p><fieldset class="q"><legend>Your poll ${p.id} asked 400 seats and said ${pc(p.p)}% Yes, margin ± ${pc(p.moe)}. A headline reads "Measure 7 leads." What does this one poll support?</legend>${shuf('q2', Q2, st.q2)}</fieldset>`;
@@ -208,28 +208,35 @@ function render(keep = true) {
     else {
       const hits = LANES.map((l) => { const x = stats(l.k); return x ? `<tr><th>${l.label}</th><td>${pc(x.mean)}%</td><td>± ${pc(x.moe)}</td><td>${x.hits} of ${x.n}</td></tr>` : ''; }).join('');
       h += `<p>Measure 7 passes with ${nf(N * TRUE_P)} of ${nf(N)} votes: <b>53.0% Yes</b>. The gold line on the field marks it.</p><div class="tw"><table class="stat"><thead><tr><th>Poll type</th><th>Average</th><th>Margin</th><th>Ranges that caught 53.0</th></tr></thead><tbody>${hits}</tbody></table></div>
-      <p>Name the error in each case.</p><div class="prog"><i style="width:${((st.cls.i + (st.cls.done ? 1 : 0)) / 3) * 100}%"></i></div>`;
+      <p>Name the error in each case.</p><div class="prog"><i style="width:${((st.cls.i + (st.cls.done ? 1 : 0)) / CLASSIFY.length) * 100}%"></i></div>`;
       const k = st.cls.i, C = CLASSIFY[k];
-      h += `<fieldset class="q"><legend>${k + 1} of 3. ${C.q}</legend>${seg('cls', KINDS, st.cls, 'three')}</fieldset>`;
-      if (st.cls.done) h += `<p class="fb ${st.cls.first[k] ? 'good' : ''}">${C.ok}</p>` + nextBtn(k < 2 ? 'Next case' : 'This happened in 1936');
+      h += `<fieldset class="q"><legend>${k + 1} of ${CLASSIFY.length}. ${C.q}</legend>${seg('cls', KINDS, st.cls, 'three')}</fieldset>`;
+      if (st.cls.done) h += `<p class="fb ${st.cls.first[k] ? 'good' : ''}">${C.ok}</p>` + nextBtn(k < CLASSIFY.length - 1 ? 'Next case' : 'This happened in 1936');
       else if (st.cls.tries) h += `<p class="fb bad">${C.no}</p>`;
     }
   } else if (s === 'debrief') {
-    const pts = [st.q1.first, st.q2.first, st.q3.first, ...[0, 1, 2].map((i) => st.cls.first[i])], n = pts.filter(Boolean).length, s16 = stats('r1600'), cl = stats('club'), ml = stats('mail');
+    const pts = [st.q1.first, st.q2.first, st.q3.first, ...CLASSIFY.map((_, i) => st.cls.first[i])], n = pts.filter(Boolean).length, s16 = stats('r1600'), cl = stats('club'), ml = stats('mail');
     h = `<p class="kick">Step 6 of 6</p><h2 tabindex="-1">The Literary Digest, 1936</h2>
     <p>In 1936 The Literary Digest mailed about 10 million straw ballots, most of them to names from telephone books and car registrations. 2,376,523 came back: 1,293,669 for Alf Landon and 972,897 for Franklin Roosevelt. That is 57 percent of the two-party tally for Landon.</p>
     <p>Roosevelt won 60.8 percent of the vote to Landon's 36.5 and carried 46 of 48 states.</p>
     <p class="mis">Scholars disagree on the cause. Squire (1988) found that the list and the low response both biased the result. Lusinchi (2012) argues the list was not the problem and nonresponse was. You ran both in this stadium.</p>
     <p class="src">${cite('lus')} · ${cite('squire')} · ${cite('app')}</p>
-    <h3>Your night</h3><p class="big2">${n} of 6 on the first try</p>
+    <h3>Your night</h3><p class="big2">${n} of ${pts.length} on the first try</p>
     <ul class="obj"><li class="${pts[0] ? 'ok' : 'no'}"><span class="mark">${pts[0] ? '✓' : '·'}</span><div>Predict how sample size changes the margin<small>${st.guess === null ? '' : `Your opening guess was ${GUESS[st.guess].toLowerCase()}. `}${s16 ? `Your ${s16.n} polls of 1,600 carried a margin of ± ${pc(s16.moe)} and ${s16.hits} of them caught the result. ` : ''}About 1,000 gives ± ${pc(moeOf(0.5, 1000))}.</small></div></li>
     <li class="${pts[1] ? 'ok' : 'no'}"><span class="mark">${pts[1] ? '✓' : '·'}</span><div>Interpret a poll with its margin<small>${st.q2poll ? `Poll ${st.q2poll.id}: ${pc(st.q2poll.p)}% ± ${pc(st.q2poll.moe)}.` : ''}</small></div></li>
-    <li class="${pts[2] && pts[3] && pts[4] && pts[5] ? 'ok' : 'no'}"><span class="mark">${pts[2] && pts[3] && pts[4] && pts[5] ? '✓' : '·'}</span><div>Tell sampling error from bias<small>${cl ? `Your club list poll said ${pc(cl.mean)}% ± ${pc(cl.moe)}. ` : ''}${ml ? `Your mail-in poll said ${pc(ml.mean)}% ± ${pc(ml.moe)}. ` : ''}The vote was 53.0%. ${[2, 3, 4, 5].filter((i) => pts[i]).length} of 4 questions right on the first try.</small></div></li></ul>
+    <li class="${pts.slice(2).every(Boolean) ? 'ok' : 'no'}"><span class="mark">${pts.slice(2).every(Boolean) ? '✓' : '·'}</span><div>Tell sampling error from bias<small>${cl ? `Your club list poll said ${pc(cl.mean)}% ± ${pc(cl.moe)}. ` : ''}${ml ? `Your mail-in poll said ${pc(ml.mean)}% ± ${pc(ml.moe)}. ` : ''}The vote was 53.0%. ${pts.slice(2).filter(Boolean).length} of ${pts.length - 2} questions right on the first try.</small></div></li></ul>
+    <h3>Your answers, in the order you gave them</h3><ul class="try">${trail().map((t) => `<li>${t}</li>`).join('')}</ul>
+    <p class="hint">First answers are kept even when a second try was right. A first answer is where a common idea shows.</p>${EF.html()}
     <h3>Where this shows up</h3><div class="cards">${FIELDS.map((f) => `<div class="cardf"><h4>${f.h}</h4><p>${f.p}${f.k ? ` <span class="src">${cite(f.k)}${f.k2 ? ' · ' + cite(f.k2) : ''}</span>` : ''}</p></div>`).join('')}</div>
     <h3>Take it further</h3><p>A news story reports an online survey with 20,000 responses, shared through social media. What does that number tell you about the margin of error? What does it not tell you?</p>
     <div class="row"><button class="btn" data-act="again">Play again</button><button class="btn" data-act="about">Sources and method</button></div>`;
   }
   panel.innerHTML = h; $('#panel').scrollTop = keep ? sc : 0; hud();
+  // a new question or the Next button must never sit unseen below the fold
+  { const P = $('#panel'), nx = panel.querySelector('[data-act=next]'), q = panel.querySelector('fieldset.q input:not(:disabled)'), tgt = nx || (q && q.closest('fieldset'));
+    const key = s + ':' + (nx ? 'next' : q ? q.name : '');
+    if (tgt && keep && key !== st.seenKey) { const r = tgt.getBoundingClientRect(), pr = P.getBoundingClientRect(); if (r.bottom > pr.bottom - 8 || r.top < pr.top) tgt.scrollIntoView({ block: nx ? 'nearest' : 'center' }); tgt.classList.add('flash'); }
+    st.seenKey = tgt ? key : null; }
 }
 function focusH() { const h2 = panel.querySelector('h2'); if (h2) h2.focus({ preventScroll: true }); }
 function go(step) {
@@ -237,6 +244,14 @@ function go(step) {
   const wide = ['title', 'brief', 'debrief'].includes(step); cam.wT = wide ? 215 : step === 'vote' ? 190 : 128; cam.hT = wide ? 100 : step === 'vote' ? 90 : 62;
   cam.pitchT = wide ? 0.5 : 0.66; if (!cam.spin) cam.yawT = step === 'vote' ? 0.75 : 0.42;
   render(false); focusH();
+}
+EF.watch(() => { if (!document.querySelector('#panel fieldset.q input:not(:disabled), #panelBody fieldset.q input:not(:disabled)')) return null; return { brief: 'Opening guess', sample: 'Four times the sample', size: 'Reading a poll with its margin', list: 'The club list', vote: 'Error case ' + (st.cls.i + 1) }[st.step] || null; });
+function trail() {
+  const QN = { q1: ['Four times the sample', Q1], q2: ['Reading a poll with its margin', Q2], q3: ['The club list of 6,400', Q3] }, out = [];
+  if (st.guess !== null) out.push(`Opening guess, before any poll: ${GUESS[st.guess].toLowerCase()}.`);
+  for (const k of ['q1', 'q2', 'q3']) { const picks = st.log.filter((l) => l.what === k); if (!picks.length) continue; const lab = (l) => (QN[k][1].opts ? QN[k][1].opts[l.sel] : QN[k][1].labels ? QN[k][1].labels[l.sel] : String(l.sel)); out.push(`${QN[k][0]}. First answer: "${lab(picks[0])}" ${picks[0].ok ? '✓' : '✕'}${picks.length > 1 ? `. After the hint: "${lab(picks[1])}" ${picks[1].ok ? '✓' : '✕'}` : ''}.`); }
+  CLASSIFY.forEach((C, i) => { const picks = st.log.filter((l) => l.what === 'cls' && l.k === i); if (!picks.length) return; out.push(`"${C.q}" You said: ${picks.map((l) => KINDS[l.sel].toLowerCase() + (l.ok ? ' ✓' : ' ✕')).join(', then ')}.`); });
+  return out;
 }
 function answer(name, i) {
   const two = (q, sel, ok) => { if (q.done) return; q.sel = sel; q.tries++; if (q.first === null) q.first = ok; if (ok || q.tries > 1) q.done = true; log(name, { sel, ok }); };
@@ -249,11 +264,11 @@ function act(a) {
   if (a === 'begin') go('brief');
   else if (a === 'about') { $('#aboutBody').innerHTML = ABOUT; $('#modal').hidden = false; $('#modalClose').focus(); }
   else if (a === 'closeAbout') $('#modal').hidden = true;
-  else if (a.startsWith('p:')) { const r = poll(a.slice(2), { sweep: true }); log('poll', { k: r.k, p: r.p, n: r.n }); render(); }
+  else if (a.startsWith('p:')) { const r = poll(a.slice(2), { sweep: true }); log('poll', { k: r.k, p: r.p, n: r.n }); if (st.polls.filter((q) => q.k === r.k).length > 10) EF.extra('Extra polls'); render(); }
   else if (a.startsWith('b:')) { for (let i = 0; i < 20; i++) st.queue.push(a.slice(2)); log('batch', { k: a.slice(2) }); render(); }
   else if (a === 'count') { st.revealed = true; st.revealT = clock; const A = aState.array, T = aT.array; for (let i = 0; i < N; i++) { A[i] = S.pref[i] ? 1 : 2; T[i] = clock + ((S.pos[i * 3] + S.rim.x) / (2 * S.rim.x)) * 3.2; } aState.needsUpdate = aT.needsUpdate = true; seatMat.uniforms.uLit.value = 0.62; seatMat.uniforms.uPop.value = 0.45; truth.visible = true; cam.spin = true; log('count'); render(); st.pending = true; }
   else if (a === 'again') location.href = location.pathname + location.search;
-  else if (a === 'next') { if (st.step === 'vote' && st.cls.i < 2) { st.cls.i++; st.cls.sel = null; st.cls.tries = 0; st.cls.done = false; render(); } else go(STEPS[STEPS.indexOf(st.step) + 1]); }
+  else if (a === 'next') { EF.resolved(); if (st.step === 'vote' && st.cls.i < CLASSIFY.length - 1) { st.cls.i++; st.cls.sel = null; st.cls.tries = 0; st.cls.done = false; render(); } else go(STEPS[STEPS.indexOf(st.step) + 1]); }
 }
 document.addEventListener('click', (e) => { const b = e.target.closest('[data-act]'); if (b && !b.disabled) act(b.dataset.act); else if (e.target.id === 'modal') act('closeAbout'); });
 document.addEventListener('change', (e) => { if (e.target.type === 'radio') answer(e.target.name, +e.target.value); });

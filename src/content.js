@@ -18,14 +18,16 @@ export const LANES = [
   { k: 'mail', method: 'mail', n: 0, label: 'Mail to all', col: [1.5, 0.5, 0.36], css: '#ff8a66' },
 ];
 export const GUESS = ['About 1,000', 'About 10,000', 'About 25,000'];
-export const Q1 = { opts: ['It is cut in half', 'It is cut to a quarter', 'It stays about the same'], vals: [0.5, 0.25, 1], hint: 'Hint: the margin goes as one over the square root of the sample size. What is the square root of 4?' };
+export const Q1 = { opts: ['It is cut in half', 'It is cut to a quarter', 'It stays about the same'], vals: [0.5, 0.25, 1], hint: 'Hint: the margin goes as one over the square root of the sample size.' };
 export const Q2 = { opts: ['Yes is ahead. The whole range is above 50.', 'Too close to call. The range includes 50.', 'No is ahead. The whole range is below 50.'], hint: 'Hint: add and subtract the margin from the poll number. Where does 50 fall?' };
-export const Q3 = { opts: ['A smaller margin, and it can still miss', 'A smaller margin, so it will be closer', 'A larger margin, since the list is narrow'], hint: 'Hint: the margin formula only knows the sample size. Does it know who is on the list?' };
+export const Q3 = { opts: ['A smaller margin, and it can still miss', 'A smaller margin, and it will be closer', 'A larger margin, and it will be closer'], hint: 'Hint: the margin formula only knows the sample size. Does it know who is on the list?' };
 export const KINDS = ['Sampling error', 'Coverage bias', 'Nonresponse bias'];
 export const CLASSIFY = [
   { q: 'Two random polls of 400, taken the same night, come out 4 points apart.', ans: 0, ok: 'Sampling error. Random samples differ by chance. This is the only error a margin of error describes, and the only one a bigger sample shrinks.', no: 'Both polls gave every seat the same chance. Nothing is wrong with the list or with who answered. What is left?' },
   { q: 'A poll draws all 6,400 names from the club list.', ans: 1, ok: 'Coverage bias. The upper deck had no chance of being asked, and the upper deck votes differently. More names from the same list give the same wrong answer with more decimals.', no: 'Everyone who was called answered. The trouble started earlier, with who could be called at all.' },
   { q: 'Ballots go to every seat. One side mails them back far more often than the other.', ans: 2, ok: 'Nonresponse bias. Everyone was asked, so the list was fine. Those who answered differ from those who did not.', no: 'Every seat got a ballot, so nobody was left off the list. The trouble came after that.' },
+  { q: 'A phone poll dials numbers at random. People under 30 pick up far less often than people over 60.', ans: 2, ok: 'Nonresponse bias. Random dialing gave every number a chance. The gap opened when some groups answered and others did not.', no: 'Every number had the same chance of being dialed. Look at what happened after the phone rang.' },
+  { q: 'A random poll of 1,600 says 54 percent. The vote comes in at 53.', ans: 0, ok: 'Sampling error. One point is inside the margin for 1,600. A sound poll is still off by chance.', no: 'Every seat had the same chance and nothing is said about who answered. One point is inside the margin for 1,600.' },
 ];
 export const FIELDS = [
   { h: 'Statistics', p: 'Each pile on the field is a sampling distribution. Its width is the standard error, which shrinks with the square root of n. The range on each poll is a 95 percent confidence interval for a proportion. About 95 in 100 such ranges catch the true value when the sample is random.', k: 'osStat' },
@@ -49,4 +51,5 @@ export const ABOUT = `
 <h3>Sources</h3>
 <ul>${Object.keys(SRC).map((k) => `<li>${cite(k)}</li>`).join('')}</ul>
 <p>Polling concepts were checked against American Government 3e by Glen Krutz and Sylvie Waskiewicz, OpenStax, and Introductory Statistics by Barbara Illowsky and Susan Dean, OpenStax, both licensed CC BY 4.0. Access for free at <a href="https://openstax.org/books/american-government-3e/pages/1-introduction" target="_blank" rel="noopener">openstax.org/books/american-government-3e</a> and <a href="https://openstax.org/books/introductory-statistics/pages/1-introduction" target="_blank" rel="noopener">openstax.org/books/introductory-statistics</a>. No OpenStax text or figures are reproduced.</p>
+<p>The debrief shows your answers in the order you gave them, with a very rough report of time spent on open decisions and optional work. It is not scored.</p>
 <p>Built with Claude as a workshop demo for faculty. No tracking. No data leaves this page.</p>`;
