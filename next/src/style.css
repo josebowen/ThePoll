@@ -157,3 +157,5 @@ body.alarm::after{animation:alarm 1.3s 2}
 .lab.truth{font:700 15px var(--ui);background:#ffd75a;color:#1c1500;border:0}
 @media (max-width:819px){#hud{left:8px;right:auto;top:44px;width:190px;padding:8px 10px 6px;border-radius:14px}#read{min-height:0}#read .l1{font-size:9.5px}#read .l2{font-size:21px;gap:6px}#read .l2 small{font-size:12px}#legend{display:none}}
 #modal .cite{white-space:normal}
+
+.flash{animation:flashq 1.2s ease-out 1}@keyframes flashq{0%{box-shadow:0 0 0 3px rgba(150,190,255,.9)}100%{box-shadow:0 0 0 3px rgba(150,190,255,0)}}
